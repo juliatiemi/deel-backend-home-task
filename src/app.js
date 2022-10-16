@@ -1,5 +1,5 @@
 import express, { json } from 'express';
-import { sequelize } from './model';
+import { sequelize } from './models';
 import { contractRouter, jobRouter } from './routes';
 
 const app = express();

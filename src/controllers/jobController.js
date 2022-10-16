@@ -1,4 +1,4 @@
-import { sequelize } from '../model';
+import { sequelize } from '../models';
 import { hasBalance } from '../services/profileService';
 
 export const getUnpaidJobs = async (req, res) => {
