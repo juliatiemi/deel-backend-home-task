@@ -29,20 +29,26 @@ app.get('/contracts/:id', getProfile, async (req, res) => {
 app.get('/contracts', getProfile, async (req, res) => {
   const { Contract } = req.app.get('models');
   const { id: profileId } = req.profile;
-  const contracts = await Contract.findAll({
-    where: {
-      [Op.and]: [
-        {
-          status: { [Op.ne]: 'terminated' },
-        },
-        {
-          [Op.or]: [{ contractorId: profileId }, { clientId: profileId }],
-        },
-      ],
-    },
-  });
+
+  const contracts = await Contract.model.getOngoingProcessByProfile(profileId);
+
   if (!contracts.length) return res.status(404).end();
   res.json(contracts);
+});
+
+app.get('/jobs/unpaid', getProfile, async (req, res) => {
+  const { Contract, Job } = req.app.get('models');
+  const { id: profileId } = req.profile;
+
+  const contracts = await Contract.model.getOngoingProcessByProfile(profileId);
+
+  if (!contracts.length) return res.status(404).end();
+
+  const contractIds = contracts.map((contract) => contract.id);
+
+  const unpaidJobs = await Job.model.getUnpaidJobs(contractIds);
+  if (!unpaidJobs.length) return res.status(404).end();
+  res.json(unpaidJobs);
 });
 
 module.exports = app;
