@@ -59,23 +59,6 @@ Contract.init(
     modelName: 'Contract',
   }
 );
-Contract.model = {
-  getOngoingProcessByProfile: async (profileId) => {
-    return Contract.findAll({
-      where: {
-        [Op.and]: [
-          {
-            status: { [Op.ne]: 'terminated' },
-          },
-          {
-            [Op.or]: [{ contractorId: profileId }, { clientId: profileId }],
-          },
-        ],
-      },
-      raw: true,
-    });
-  },
-};
 
 export class Job extends Model {}
 Job.init(

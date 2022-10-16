@@ -3,7 +3,7 @@ import { getProfile } from '../middleware/getProfile';
 import {
   getContractById,
   getOpenContracts,
-} from '../controllers/contactController';
+} from '../controllers/contractController';
 
 export const contractRouter = new Router();
 
