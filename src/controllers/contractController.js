@@ -1,5 +1,5 @@
 import {
-  getContractById as getContractById_,
+  getContractByIdAndOwner,
   getOpenContracts as getOpenContracts_,
 } from '../services/contractService';
 
@@ -8,7 +8,11 @@ export const getContractById = async (req, res) => {
   const { id: contractId } = req.params;
   const { id: profileId } = req.profile;
 
-  const contract = await getContractById_({ Contract, contractId, profileId });
+  const contract = await getContractByIdAndOwner({
+    Contract,
+    contractId,
+    profileId,
+  });
 
   if (!contract)
     return res

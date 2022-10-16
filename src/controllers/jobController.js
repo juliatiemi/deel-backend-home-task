@@ -1,18 +1,36 @@
 import { sequelize } from '../models';
-import { hasBalance } from '../services/profileService';
+import { getContractById, getOpenContracts } from '../services/contractService';
+import {
+  getJobById,
+  getUnpaidJobs as getUnpaidJobs_,
+  payJob as payJob_,
+} from '../services/jobService';
+import {
+  credit,
+  debit,
+  getProfile,
+  hasBalance,
+} from '../services/profileService';
+import { getIdFromArrayOfObjects } from '../utils';
 
 export const getUnpaidJobs = async (req, res) => {
   const { Contract, Job } = req.app.get('models');
   const { id: profileId } = req.profile;
 
-  const contracts = await Contract.model.getOngoingProcessByProfile(profileId);
+  const contracts = await getOpenContracts({ Contract, profileId });
+  if (!contracts.length)
+    return res
+      .status(404)
+      .json({ message: 'No open contracts found for this profile.' });
 
-  if (!contracts.length) return res.status(404).end();
+  const contractIds = getIdFromArrayOfObjects(contracts);
 
-  const contractIds = contracts.map((contract) => contract.id);
+  const unpaidJobs = await getUnpaidJobs_({ Job, contractIds });
+  if (!unpaidJobs.length)
+    return res
+      .status(404)
+      .json({ message: 'No unpaid jobs found for this profile.' });
 
-  const unpaidJobs = await Job.model.getUnpaidJobs(contractIds);
-  if (!unpaidJobs.length) return res.status(404).end();
   res.json(unpaidJobs);
 };
 
@@ -21,76 +39,53 @@ export const payJob = async (req, res) => {
   const { job_id: jobId } = req.params;
   const { id: profileId } = req.profile;
 
-  //to do validate user
-
   try {
-    const result = await sequelize.transaction(async (transaction) => {
-      const { ContractId, paid, price } = await Job.findOne(
-        { where: { id: jobId } },
-        { transaction }
-      );
+    await sequelize.transaction(async (transaction) => {
+      const job = await getJobById({
+        Job,
+        jobId,
+        transaction,
+      });
+      if (!job) throw new Error('No job found.');
 
-      console.log(
-        `:>> Job ${jobId} costs ${price} and is it${paid ? '' : ' not'} paid.`
-      );
+      const { ContractId: contractId, paid, price } = job;
 
       if (paid) throw new Error('This job has already been paid.');
 
-      const { ContractorId, ClientId } = await Contract.findOne(
-        { where: { id: ContractId }, raw: true },
-        { transaction }
-      );
-
-      console.log(
-        `:>> Contract ${ContractId} was between client ${ClientId} and contractor ${ContractorId}`
-      );
-
-      const { balance } = await Profile.findOne(
-        { where: { id: ClientId } },
-        { transaction }
-      );
-
-      console.log(`:>> Client has a ${balance} balance.`);
-
-      if (!hasBalance(balance, price)) throw new Error('Insufficient balance.');
-
-      const promises = [
-        Profile.increment(
-          { balance: price },
-          { where: { id: ContractorId } },
-          { transaction }
-        ),
-        Profile.decrement(
-          { balance: price },
-          { where: { id: ClientId } },
-          { transaction }
-        ),
-        Job.update(
-          { paymentDate: new Date(), paid: true },
-          { where: { id: jobId } },
-          { transaction }
-        ),
-      ];
-
-      await Promise.all(promises).catch((_) => {
-        throw new Error('Something went wrong try again later.');
+      const contract = await getContractById({
+        Contract,
+        contractId,
+        transaction,
       });
 
-      const { balance: clientBalance } = await Profile.findOne(
-        { where: { id: ClientId } },
-        { transaction }
-      );
-      const { balance: contractorBalance } = await Profile.findOne(
-        { where: { id: ContractorId } },
-        { transaction }
-      );
+      if (!contract) throw new Error('Could not find contract for this job.');
 
-      console.log(
-        `Client balace: ${clientBalance}\nContractor balance:${contractorBalance}`
-      );
+      const { ContractorId: contractorId, ClientId: clientId } = contract;
+      if (clientId !== profileId) throw new Error('Unauthorized.');
+
+      const profile = await getProfile({
+        Profile,
+        profileId: clientId,
+        transaction,
+      });
+      if (!profile) throw new Error('Could not find client for this job.');
+
+      const { balance: clientBalance } = profile;
+      if (!hasBalance(clientBalance, price))
+        throw new Error('Insufficient balance.');
+
+      const promises = [
+        credit({ Profile, profileId: contractorId, value: price, transaction }),
+        debit({ Profile, profileId: clientId, value: price, transaction }),
+        payJob_({ Job, jobId, transaction }),
+      ];
+
+      await Promise.all(promises).catch((error) => {
+        throw new Error('Something went wrong, please try again later.');
+      });
     });
 
-    res.json('Operation success');
+    res.json('Operation successful.');
   } catch (error) {
     res.status(406).json({ message: error.toString() });
   }

@@ -7,7 +7,6 @@ import Sequelize, {
   BOOLEAN,
   DATE,
 } from 'sequelize';
-import { Op } from 'sequelize';
 
 export const sequelize = new Sequelize({
   dialect: 'sqlite',
@@ -84,22 +83,6 @@ Job.init(
     modelName: 'Job',
   }
 );
-Job.model = {
-  getUnpaidJobs: async (contractIds) => {
-    return Job.findAll({
-      where: {
-        [Op.and]: [
-          {
-            contractId: { [Op.in]: contractIds },
-          },
-          {
-            paid: { [Op.not]: true },
-          },
-        ],
-      },
-    });
-  },
-};
 
 Profile.hasMany(Contract, { as: 'Contractor', foreignKey: 'ContractorId' });
 Contract.belongsTo(Profile, { as: 'Contractor' });

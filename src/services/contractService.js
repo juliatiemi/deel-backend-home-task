@@ -1,6 +1,10 @@
 import { Op } from 'sequelize';
 
-export const getContractById = async ({ Contract, contractId, profileId }) => {
+export const getContractByIdAndOwner = async ({
+  Contract,
+  contractId,
+  profileId,
+}) => {
   return Contract.findOne({
     where: {
       [Op.and]: [
@@ -11,6 +15,19 @@ export const getContractById = async ({ Contract, contractId, profileId }) => {
       ],
     },
   });
+};
+
+export const getContractById = async ({
+  Contract,
+  contractId,
+  transaction,
+}) => {
+  return Contract.findOne(
+    {
+      where: { id: contractId },
+    },
+    { transaction }
+  );
 };
 
 export const getOpenContracts = async ({ Contract, profileId }) => {
