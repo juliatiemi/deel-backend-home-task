@@ -3,6 +3,7 @@ import { sequelize } from './model';
 import { getProfile } from './middleware/getProfile';
 import { Op } from 'sequelize';
 import { hasBalance } from './services/profileService';
+import { contractRouter } from './routes';
 
 const app = express();
 app.use(json());
@@ -22,33 +23,7 @@ async function init() {
   }
 }
 
-app.get('/contracts/:id', getProfile, async (req, res) => {
-  const { Contract } = req.app.get('models');
-  const { id } = req.params;
-  const { id: profileId } = req.profile;
-  const contract = await Contract.findOne({
-    where: {
-      [Op.and]: [
-        { id },
-        {
-          [Op.or]: [{ contractorId: profileId }, { clientId: profileId }],
-        },
-      ],
-    },
-  });
-  if (!contract) return res.status(404).end();
-  res.json(contract);
-});
-
-app.get('/contracts', getProfile, async (req, res) => {
-  const { Contract } = req.app.get('models');
-  const { id: profileId } = req.profile;
-
-  const contracts = await Contract.model.getOngoingProcessByProfile(profileId);
-
-  if (!contracts.length) return res.status(404).end();
-  res.json(contracts);
-});
+app.use('/contracts', contractRouter);
 
 app.get('/jobs/unpaid', getProfile, async (req, res) => {
   const { Contract, Job } = req.app.get('models');
