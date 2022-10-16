@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const { Op } = require('sequelize');
 
 const sequelize = new Sequelize({
   dialect: 'sqlite',
@@ -49,6 +50,23 @@ Contract.init(
     modelName: 'Contract',
   }
 );
+Contract.model = {
+  getOngoingProcessByProfile: async (profileId) => {
+    return Contract.findAll({
+      where: {
+        [Op.and]: [
+          {
+            status: { [Op.ne]: 'terminated' },
+          },
+          {
+            [Op.or]: [{ contractorId: profileId }, { clientId: profileId }],
+          },
+        ],
+      },
+      raw: true,
+    });
+  },
+};
 
 class Job extends Sequelize.Model {}
 Job.init(
@@ -74,6 +92,22 @@ Job.init(
     modelName: 'Job',
   }
 );
+Job.model = {
+  getUnpaidJobs: async (contractIds) => {
+    return Job.findAll({
+      where: {
+        [Op.and]: [
+          {
+            contractId: { [Op.in]: contractIds },
+          },
+          {
+            paid: { [Op.not]: true },
+          },
+        ],
+      },
+    });
+  },
+};
 
 Profile.hasMany(Contract, { as: 'Contractor', foreignKey: 'ContractorId' });
 Contract.belongsTo(Profile, { as: 'Contractor' });
