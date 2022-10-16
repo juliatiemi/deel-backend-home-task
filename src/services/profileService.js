@@ -1,7 +1,3 @@
-const hasBalance = (clientBallance, amount) => {
+export const hasBalance = (clientBallance, amount) => {
   return clientBallance >= amount;
-};
-
-module.exports = {
-  hasBalance,
 };

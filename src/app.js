@@ -1,14 +1,26 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const { sequelize } = require('./model');
-const { getProfile } = require('./middleware/getProfile');
-const { Op } = require('sequelize');
-const { hasBalance } = require('./services/profileService');
+import express, { json } from 'express';
+import { sequelize } from './model';
+import { getProfile } from './middleware/getProfile';
+import { Op } from 'sequelize';
+import { hasBalance } from './services/profileService';
 
 const app = express();
-app.use(bodyParser.json());
+app.use(json());
 app.set('sequelize', sequelize);
 app.set('models', sequelize.models);
+
+init();
+
+async function init() {
+  try {
+    app.listen(3001, () => {
+      console.log('Express App Listening on Port 3001');
+    });
+  } catch (error) {
+    console.error(`An error occurred: ${JSON.stringify(error)}`);
+    process.exit(1);
+  }
+}
 
 app.get('/contracts/:id', getProfile, async (req, res) => {
   const { Contract } = req.app.get('models');
@@ -133,4 +145,4 @@ app.post('/jobs/:job_id/pay', getProfile, async (req, res) => {
   }
 });
 
-module.exports = app;
+export default app;
