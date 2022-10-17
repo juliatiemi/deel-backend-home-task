@@ -1,3 +1,3 @@
-export const getIdFromArrayOfObjects = (array) => {
-  return array.map((item) => item.id);
+export const getKeyFromArrayOfObjects = (array, key) => {
+  return array.map((item) => item[key]);
 };

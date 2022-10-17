@@ -11,7 +11,7 @@ import {
   getProfile,
   hasBalance,
 } from '../services/profileService';
-import { getIdFromArrayOfObjects } from '../utils';
+import { getKeyFromArrayOfObjects } from '../utils';
 
 export const getUnpaidJobs = async (req, res) => {
   const { Contract, Job } = req.app.get('models');
@@ -23,7 +23,7 @@ export const getUnpaidJobs = async (req, res) => {
       .status(404)
       .json({ message: 'No open contracts found for this profile.' });
 
-  const contractIds = getIdFromArrayOfObjects(contracts);
+  const contractIds = getKeyFromArrayOfObjects(contracts, 'id');
 
   const unpaidJobs = await getUnpaidJobs_({ Job, contractIds });
   if (!unpaidJobs.length)

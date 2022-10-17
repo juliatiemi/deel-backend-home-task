@@ -21,3 +21,7 @@ export const debit = async ({ Profile, profileId, value, transaction }) => {
     { transaction }
   );
 };
+
+export const isDepositAmountValid = (depositAmount, ownedAmount) => {
+  return depositAmount <= ownedAmount * 0.25;
+};

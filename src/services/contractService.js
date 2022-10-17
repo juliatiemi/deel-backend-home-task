@@ -44,3 +44,11 @@ export const getOpenContracts = async ({ Contract, profileId }) => {
     },
   });
 };
+
+export const getContractsByClient = async ({
+  Contract,
+  clientId,
+  transaction,
+}) => {
+  return Contract.findAll({ where: { clientId } }, { transaction });
+};
