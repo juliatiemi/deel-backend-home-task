@@ -1,3 +1,5 @@
+import { getKeyFromArrayOfObjects } from '../utils';
+
 export const hasBalance = (clientBallance, amount) => {
   return clientBallance >= amount;
 };
@@ -33,4 +35,36 @@ export const getContractors = async ({ Profile }) => {
   });
 
   return professions;
+};
+
+export const getTotalAmountByProfession = ({
+  allContractors,
+  allContractsFromPaidJobs,
+  allPaidJobs,
+}) => {
+  return allContractors.reduce((result, contractor) => {
+    const { profession: key, id } = contractor;
+
+    result[key] = result[key] || 0;
+
+    const contractsByAContractor = allContractsFromPaidJobs.filter(
+      (contract) => contract.ContractorId === id
+    );
+    const contractIdsByAContractor = getKeyFromArrayOfObjects(
+      contractsByAContractor,
+      'id'
+    );
+
+    const paidJobsByContractor = allPaidJobs.filter((job) =>
+      contractIdsByAContractor.includes(job.ContractId)
+    );
+
+    const amount = paidJobsByContractor.reduce((total, cur) => {
+      return total + cur.price;
+    }, 0);
+
+    result[key] = result[key] + amount;
+
+    return result;
+  }, {});
 };
