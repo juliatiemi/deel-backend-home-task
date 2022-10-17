@@ -33,7 +33,19 @@ export const payJob = async ({ Job, jobId, transaction }) => {
 
 export const calculateOwnedAmount = (jobs) => {
   return getKeyFromArrayOfObjects(jobs, 'price').reduce(
-    (value, total) => total + value,
+    (total, value) => total + value,
     0
   );
+};
+
+export const getPaidJobsByTimeRange = async ({ Job, startDate, endDate }) => {
+  return await Job.findAll({
+    where: {
+      paid: true,
+      paymentDate: {
+        [Op.between]: [startDate, endDate],
+      },
+    },
+    raw: true,
+  });
 };

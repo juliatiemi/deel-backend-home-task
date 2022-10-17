@@ -10,8 +10,6 @@ export const makeDeposit = async (req, res) => {
   const { id: profileId } = req.profile;
   const { amount: depositAmount } = req.body;
 
-  console.log({ targetProfileId, profileId });
-
   if (+targetProfileId !== profileId)
     return res.status(401).json({ message: 'Unauthorized.' });
 

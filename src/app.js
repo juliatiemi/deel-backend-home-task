@@ -1,6 +1,6 @@
 import express, { json } from 'express';
 import { sequelize } from './models';
-import { contractRouter, jobRouter } from './routes';
+import { adminRouter, contractRouter, jobRouter } from './routes';
 import { balanceRouter } from './routes/balance-routes';
 
 const app = express();
@@ -21,6 +21,7 @@ async function init() {
   }
 }
 
+app.use('/admin', adminRouter);
 app.use('/balances', balanceRouter);
 app.use('/contracts', contractRouter);
 app.use('/jobs', jobRouter);

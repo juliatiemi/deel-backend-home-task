@@ -25,3 +25,12 @@ export const debit = async ({ Profile, profileId, value, transaction }) => {
 export const isDepositAmountValid = (depositAmount, ownedAmount) => {
   return depositAmount <= ownedAmount * 0.25;
 };
+
+export const getContractors = async ({ Profile }) => {
+  const professions = await Profile.findAll({
+    where: { type: 'contractor' },
+    raw: true,
+  });
+
+  return professions;
+};

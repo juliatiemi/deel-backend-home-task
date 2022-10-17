@@ -30,6 +30,13 @@ export const getContractById = async ({
   );
 };
 
+export const getContractByIds = async ({ Contract, contractIds }) => {
+  return Contract.findAll({
+    where: { id: contractIds },
+    raw: true,
+  });
+};
+
 export const getOpenContracts = async ({ Contract, profileId }) => {
   return Contract.findAll({
     where: {
@@ -51,4 +58,15 @@ export const getContractsByClient = async ({
   transaction,
 }) => {
   return Contract.findAll({ where: { clientId } }, { transaction });
+};
+
+export const getContractsByContractor = async ({
+  Contract,
+  contractorId,
+  transaction,
+}) => {
+  return Contract.findAll(
+    { where: { contractorId }, raw: true },
+    { transaction }
+  );
 };
