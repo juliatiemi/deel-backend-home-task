@@ -1,4 +1,11 @@
 import { Op } from 'sequelize';
+import { getPaidJobsByTimeRange } from './jobService';
+import {
+  CONTRACT_STATUS,
+  getKeyFromArrayOfObjects,
+  MODEL_PROPERTIES,
+  PROFILE_TYPES,
+} from '../utils';
 
 export const getContractByIdAndOwner = async ({
   Contract,
@@ -42,7 +49,7 @@ export const getOpenContracts = async ({ Contract, profileId }) => {
     where: {
       [Op.and]: [
         {
-          status: { [Op.ne]: 'terminated' },
+          status: { [Op.ne]: CONTRACT_STATUS.TERMINATED },
         },
         {
           [Op.or]: [{ contractorId: profileId }, { clientId: profileId }],
@@ -69,4 +76,41 @@ export const getContractsByContractor = async ({
     { where: { contractorId }, raw: true },
     { transaction }
   );
+};
+
+export const getAllContractsFromPaidJobs = async ({
+  Job,
+  Contract,
+  startDate,
+  endDate,
+}) => {
+  const allPaidJobs = await getPaidJobsByTimeRange({ Job, startDate, endDate });
+  const allPaidJobsContractIds = getKeyFromArrayOfObjects(
+    allPaidJobs,
+    MODEL_PROPERTIES.CONTRACT_ID
+  );
+
+  return [
+    allPaidJobs,
+    await getContractByIds({
+      Contract,
+      contractIds: allPaidJobsContractIds,
+    }),
+  ];
+};
+
+export const getContractByProfile = ({
+  allContractsFromPaidJobs,
+  profileId,
+  type,
+}) => {
+  const idType =
+    type === PROFILE_TYPES.CONTRACTOR
+      ? MODEL_PROPERTIES.CONTRACTOR_ID
+      : MODEL_PROPERTIES.CLIENT_ID;
+
+  const contractsByProfile = allContractsFromPaidJobs.filter(
+    (contract) => contract[idType] === profileId
+  );
+  return getKeyFromArrayOfObjects(contractsByProfile, MODEL_PROPERTIES.ID);
 };

@@ -1,4 +1,5 @@
-import { getKeyFromArrayOfObjects } from '../utils';
+import { DEPOSIT_VALIDATION_TAX } from '../utils';
+import { getContractByProfile } from './contractService';
 
 export const hasBalance = (clientBallance, amount) => {
   return clientBallance >= amount;
@@ -25,41 +26,42 @@ export const debit = async ({ Profile, profileId, value, transaction }) => {
 };
 
 export const isDepositAmountValid = (depositAmount, ownedAmount) => {
-  return depositAmount <= ownedAmount * 0.25;
+  return depositAmount <= ownedAmount * DEPOSIT_VALIDATION_TAX;
 };
 
-export const getContractors = async ({ Profile }) => {
-  const professions = await Profile.findAll({
-    where: { type: 'contractor' },
+export const getProfileByType = async ({ Profile, type }) => {
+  const profiles = await Profile.findAll({
+    where: { type },
     raw: true,
   });
 
-  return professions;
+  return profiles;
 };
 
-export const getTotalAmountByProfession = ({
-  allContractors,
+export const getTotalAmountByProfile = ({
+  allProfiles,
   allContractsFromPaidJobs,
   allPaidJobs,
+  type,
+  groupingProperty,
 }) => {
-  return allContractors.reduce((result, contractor) => {
-    const { profession: key, id } = contractor;
+  return allProfiles.reduce((result, profile) => {
+    const key = profile[groupingProperty];
+    const { id } = profile;
 
     result[key] = result[key] || 0;
 
-    const contractsByAContractor = allContractsFromPaidJobs.filter(
-      (contract) => contract.ContractorId === id
-    );
-    const contractIdsByAContractor = getKeyFromArrayOfObjects(
-      contractsByAContractor,
-      'id'
+    const contractIdsByProfile = getContractByProfile({
+      allContractsFromPaidJobs,
+      profileId: id,
+      type,
+    });
+
+    const paidJobsByClient = allPaidJobs.filter((job) =>
+      contractIdsByProfile.includes(job.ContractId)
     );
 
-    const paidJobsByContractor = allPaidJobs.filter((job) =>
-      contractIdsByAContractor.includes(job.ContractId)
-    );
-
-    const amount = paidJobsByContractor.reduce((total, cur) => {
+    const amount = paidJobsByClient.reduce((total, cur) => {
       return total + cur.price;
     }, 0);
 
@@ -67,4 +69,27 @@ export const getTotalAmountByProfession = ({
 
     return result;
   }, {});
+};
+
+export const getBestClients = async ({ Profile, sortedClients, limit }) => {
+  const trueLimit = Math.min(+limit, sortedClients.length);
+
+  const clients = [];
+
+  for (let i = 0; i < trueLimit; i++) {
+    const clientId = sortedClients[i][0];
+
+    const { firstName, lastName } = await getProfile({
+      Profile,
+      profileId: clientId,
+    });
+
+    const client = {
+      id: clientId,
+      fullName: `${firstName} ${lastName}`,
+      paid: sortedClients[i][1],
+    };
+    clients.push(client);
+  }
+  return clients;
 };

@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { getKeyFromArrayOfObjects } from '../utils';
+import { getKeyFromArrayOfObjects, MODEL_PROPERTIES } from '../utils';
 
 export const getUnpaidJobs = async ({ Job, contractIds, transaction }) => {
   return Job.findAll(
@@ -32,7 +32,7 @@ export const payJob = async ({ Job, jobId, transaction }) => {
 };
 
 export const calculateOwnedAmount = (jobs) => {
-  return getKeyFromArrayOfObjects(jobs, 'price').reduce(
+  return getKeyFromArrayOfObjects(jobs, MODEL_PROPERTIES.PRICE).reduce(
     (total, value) => total + value,
     0
   );
